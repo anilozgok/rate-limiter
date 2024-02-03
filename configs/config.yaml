@@ -1,0 +1,4 @@
+rateLimiter:
+  limits:
+    count: 10
+    rate: 1
