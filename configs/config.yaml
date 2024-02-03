@@ -1,4 +1,4 @@
 rateLimiter:
   limits:
-    count: 10
-    rate: 1
+    count: 2
+    rate: 10

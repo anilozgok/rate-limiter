@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/anilozgok/rate-limiter/internal/config"
+	"github.com/anilozgok/rate-limiter/internal/middleware"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"time"
@@ -22,9 +24,30 @@ func init() {
 }
 
 func main() {
-	_, err := config.Get()
-	if err != nil {
-		zap.L().Fatal("failed to read configs", zap.Error(err))
+	app := fiber.New(fiber.Config{
+		DisableStartupMessage: true,
+	})
+
+	app.Use(logger.New())
+
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
+
+	app.Get("/non-limited-endpoint", func(c *fiber.Ctx) error {
+		return c.JSON("non-limited-endpoint")
+	})
+
+	app.Get("/limited-endpoint", middleware.RateLimiter, func(c *fiber.Ctx) error {
+		return c.JSON("limited-endpoint")
+	})
+
+	zap.L().Info("server starting on :8080")
+	if err := app.Listen(":8080"); err != nil {
+		zap.L().Panic("error occurred while starting server", zap.Error(err))
 	}
 
+	if err := app.Shutdown(); err != nil {
+		zap.L().Panic("error occurred while shutting down server", zap.Error(err))
+	}
 }
